@@ -821,20 +821,19 @@ function helloWorld() {
                 // 解码URL编码
                 let cleanedPath = decodeURIComponent(filePath);
                 
+                console.log('清理前路径:', cleanedPath);
+                
                 // 替换Windows路径分隔符
                 cleanedPath = cleanedPath.replace(/\\/g, '/');
                 
                 // 移除开头的./或.\
                 cleanedPath = cleanedPath.replace(/^\.\//, '');
                 
-                // 如果路径包含article/article/，简化为article/
-                cleanedPath = cleanedPath.replace(/article\/article\//g, 'article/');
+                // 不要移除article/article/结构，这是正确的路径
+                // cleanedPath = cleanedPath.replace(/article\/article\//g, 'article/');
                 
                 // 确保以正确的路径开头（GitHub Pages需要绝对路径）
-                if (!cleanedPath.startsWith('/') && !cleanedPath.startsWith('article/')) {
-                    cleanedPath = '/article/' + cleanedPath;
-                } else if (cleanedPath.startsWith('article/')) {
-                    // 将相对路径转换为绝对路径
+                if (!cleanedPath.startsWith('/')) {
                     cleanedPath = '/' + cleanedPath;
                 }
                 
@@ -842,6 +841,8 @@ function helloWorld() {
                 if (!cleanedPath.toLowerCase().endsWith('.md')) {
                     cleanedPath += '.md';
                 }
+                
+                console.log('清理后路径:', cleanedPath);
                 
                 return cleanedPath;
             }
