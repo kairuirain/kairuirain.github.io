@@ -830,9 +830,12 @@ function helloWorld() {
                 // 如果路径包含article/article/，简化为article/
                 cleanedPath = cleanedPath.replace(/article\/article\//g, 'article/');
                 
-                // 确保以正确的路径开头
-                if (!cleanedPath.startsWith('article/')) {
-                    cleanedPath = 'article/' + cleanedPath;
+                // 确保以正确的路径开头（GitHub Pages需要绝对路径）
+                if (!cleanedPath.startsWith('/') && !cleanedPath.startsWith('article/')) {
+                    cleanedPath = '/article/' + cleanedPath;
+                } else if (cleanedPath.startsWith('article/')) {
+                    // 将相对路径转换为绝对路径
+                    cleanedPath = '/' + cleanedPath;
                 }
                 
                 // 确保以.md结尾

@@ -169,8 +169,8 @@
                     // 编码文件名中的特殊字符
                     const encodedFilename = encodeURIComponent(cleanFilename);
                     
-                    // 构建完整的文件路径参数
-                    const filePath = `article/article/${cleanFilename}`;
+                    // 构建完整的文件路径参数（GitHub Pages需要绝对路径）
+                    const filePath = `/article/article/${cleanFilename}`;
                     const encodedFilePath = encodeURIComponent(filePath);
                     
                     // 构建跳转URL（使用编码后的文件路径）
