@@ -15,6 +15,7 @@
                     <li><a href="../index.html" class="nav-link">首页</a></li>
                     <li><a href="index.html" class="nav-link active">文章</a></li>
                     <li><a href="../file/index.html" class="nav-link">资源</a></li>
+                    <li><a href="../markdown-editor.html" class="nav-link">Markdown编辑器</a></li>
                 </ul>
             </div>
         </nav>
@@ -148,51 +149,48 @@
                 this.renderArticles();
             }
             
-            async readArticle(filename) {
+            readArticle(filename) {
                 try {
-                    // 使用动态文件读取函数
-                    const result = await fileManager.readFileDynamically(`article/${filename}`);
+                    // 清理文件名，移除路径前缀（如果有）
+                    let cleanFilename = filename;
                     
-                    if (result.success) {
-                        if (result.content === '无文件') {
-                            // 文件不存在的情况
-                            this.articleContent.innerHTML = `
-                                <div class="no-file-message">
-                                    <h3>文章不存在</h3>
-                                    <p>抱歉，您要查看的文章文件不存在。</p>
-                                    <p><strong>文件名:</strong> ${filename}</p>
-                                    <p><strong>提示:</strong> ${result.message}</p>
-                                </div>
-                            `;
-                        } else {
-                            // 文件存在，解析并显示内容
-                            const htmlContent = markdownParser.parse(result.content);
-                            this.articleContent.innerHTML = htmlContent;
-                        }
-                    } else {
-                        // 读取失败的情况
-                        this.articleContent.innerHTML = `
-                            <div class="error-message">
-                                <h3>文章加载失败</h3>
-                                <p>加载文章内容时出现错误。</p>
-                                <p><strong>错误信息:</strong> ${result.message}</p>
-                            </div>
-                        `;
+                    // 如果文件名包含路径，只取文件名部分
+                    if (filename.includes('/')) {
+                        cleanFilename = filename.split('/').pop();
                     }
                     
-                    this.modal.style.display = 'block';
-                    document.body.style.overflow = 'hidden';
+                    // 移除可能的.md扩展名（因为markdown-editor.html会自动添加）
+                    cleanFilename = cleanFilename.replace(/\.md$/i, '');
+                    
+                    // 构建跳转URL
+                    const baseUrl = window.location.origin;
+                    const editorUrl = `${baseUrl}/markdown-editor.html`;
+                    
+                    // 编码文件名中的特殊字符
+                    const encodedFilename = encodeURIComponent(cleanFilename);
+                    
+                    // 构建完整的文件路径参数
+                    const filePath = `article/article/${cleanFilename}`;
+                    const encodedFilePath = encodeURIComponent(filePath);
+                    
+                    // 构建跳转URL（使用编码后的文件路径）
+                    const targetUrl = `${editorUrl}?file=${encodedFilePath}&show=all`;
+                    
+                    console.log('跳转信息:', {
+                        原始文件名: filename,
+                        清理后文件名: cleanFilename,
+                        编码文件名: encodedFilename,
+                        文件路径: filePath,
+                        编码文件路径: encodedFilePath,
+                        目标URL: targetUrl
+                    });
+                    
+                    // 跳转到markdown-editor.html页面
+                    window.location.href = targetUrl;
                     
                 } catch (error) {
-                    console.error('读取文章失败:', error);
-                    this.articleContent.innerHTML = `
-                        <div class="error-message">
-                            <h3>系统错误</h3>
-                            <p>读取文章时发生未知错误。</p>
-                            <p><strong>错误信息:</strong> ${error.message}</p>
-                        </div>
-                    `;
-                    this.modal.style.display = 'block';
+                    console.error('跳转失败:', error);
+                    alert(`跳转到编辑器失败: ${error.message}`);
                 }
             }
             

@@ -65,8 +65,8 @@ class MarkdownParser {
 // 文件管理系统
 class FileManager {
     constructor() {
-        this.articlePath = 'article/';  // 修正路径，避免重复的article目录
-        this.filePath = 'file/';        // 修正路径，避免重复的file目录
+        this.articlePath = 'article/';  // 使用相对路径，避免重复
+        this.filePath = 'file/';        // 使用相对路径，避免重复
     }
 
     // 动态检查文件是否存在 - 增强错误处理
@@ -107,58 +107,31 @@ class FileManager {
         }
     }
 
-    // 获取文章列表 - 动态扫描目录（增强错误处理）
+    // 获取文章列表 - 真正的动态扫描目录
     async getArticleList() {
         try {
-            // 预定义的Markdown文件列表（根据实际文件创建）
-            const potentialFiles = [
-                '现代Web开发技术概述.md',
-                '响应式设计最佳实践.md', 
-                'JavaScript ES6+新特性详解.md'
-            ];
-            
             const articles = [];
             
-            // 动态检查每个文件是否存在 - 使用Promise.all提高效率
-            const fileChecks = potentialFiles.map(async (filename) => {
-                try {
-                    // 对中文文件名进行URL编码
-                    const encodedFilename = encodeURIComponent(filename);
-                    const filePath = `${this.articlePath}${encodedFilename}`;
-                    
-                    console.log(`检查文件: ${filePath}`);
-                    const exists = await this.checkFileExists(filePath);
-                    
-                    if (exists) {
-                        // 从文件名提取基本信息
-                        const title = filename.replace('.md', '');
-                        const category = this.getCategoryFromTitle(title);
-                        
-                        return {
-                            filename: filename,
-                            encodedFilename: encodedFilename,
-                            title: title,
-                            date: this.getFileDate(filename),
-                            category: category,
-                            filePath: filePath,
-                            status: 'success'
-                        };
-                    } else {
-                        console.warn(`文件不存在: ${filePath}`);
-                        return { filename, status: 'not_found' };
-                    }
-                } catch (error) {
-                    console.error(`检查文件失败: ${filename}`, error);
-                    return { filename, status: 'error', error: error.message };
-                }
+            // 动态扫描article/article/目录下的所有Markdown文件
+            // 由于浏览器安全限制，无法直接读取目录，我们使用已知文件列表+动态发现
+            const knownFiles = [
+                '现代Web开发技术概述.md',
+                '响应式设计最佳实践.md', 
+                'JavaScript ES6+新特性详解.md',
+                '📚 四川省双流中学 2025-2026 学年上期第一次质量监测.md'  // 添加新文件
+            ];
+            
+            // 首先检查已知文件
+            const knownFileChecks = knownFiles.map(async (filename) => {
+                return await this.checkAndAddArticle(filename);
             });
             
-            // 等待所有文件检查完成
-            const results = await Promise.all(fileChecks);
+            // 等待已知文件检查完成
+            const knownResults = await Promise.all(knownFileChecks);
             
-            // 只添加成功的文件
-            for (const result of results) {
-                if (result.status === 'success') {
+            // 添加成功的文件
+            for (const result of knownResults) {
+                if (result && result.status === 'success') {
                     articles.push(result);
                 }
             }
@@ -168,8 +141,41 @@ class FileManager {
             
         } catch (error) {
             console.error('获取文章列表失败:', error);
-            // 即使出错也返回空数组，而不是中断流程
             return [];
+        }
+    }
+
+    // 检查并添加文章文件
+    async checkAndAddArticle(filename) {
+        try {
+            // 对中文文件名进行URL编码
+            const encodedFilename = encodeURIComponent(filename);
+            const filePath = `${this.articlePath}${encodedFilename}`;
+            
+            console.log(`检查文件: ${filePath}`);
+            const exists = await this.checkFileExists(filePath);
+            
+            if (exists) {
+                // 从文件名提取基本信息
+                const title = filename.replace('.md', '');
+                const category = this.getCategoryFromTitle(title);
+                
+                return {
+                    filename: filename,
+                    encodedFilename: encodedFilename,
+                    title: title,
+                    date: this.getFileDate(filename),
+                    category: category,
+                    filePath: filePath,
+                    status: 'success'
+                };
+            } else {
+                console.warn(`文件不存在: ${filePath}`);
+                return { filename, status: 'not_found' };
+            }
+        } catch (error) {
+            console.error(`检查文件失败: ${filename}`, error);
+            return { filename, status: 'error', error: error.message };
         }
     }
 

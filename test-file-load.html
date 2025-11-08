@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件加载测试</title>
+</head>
+<body>
+    <h1>文件加载测试页面</h1>
+    
+    <h2>测试链接：</h2>
+    <ul>
+        <li><a href="markdown-editor.html?file=.\article\article\%F0%9F%93%9A%20%E5%9B%9B%E5%B7%9D%E7%9C%81%E5%8F%8C%E6%B5%81%E4%B8%AD%E5%AD%A6%202025-2026%20%E5%AD%A6%E5%B9%B4%E4%B8%8A%E6%9C%9F%E7%AC%AC%E4%B8%80%E6%AC%A1%E8%B4%A8%E9%87%8F%E7%9B%91%E6%B5%8B.md&show=all">
+            测试URL（包含Windows路径和URL编码）
+        </a></li>
+        <li><a href="markdown-editor.html?file=📚 四川省双流中学 2025-2026 学年上期第一次质量监测&show=all">
+            简化URL（直接使用文件名）
+        </a></li>
+        <li><a href="markdown-editor.html?file=article/article/📚 四川省双流中学 2025-2026 学年上期第一次质量监测.md&show=all">
+            完整路径URL
+        </a></li>
+    </ul>
+    
+    <h2>调试信息：</h2>
+    <div id="debug-info"></div>
+    
+    <script>
+        // 显示当前URL参数
+        const urlParams = new URLSearchParams(window.location.search);
+        const fileParam = urlParams.get('file');
+        const showParam = urlParams.get('show');
+        
+        const debugInfo = document.getElementById('debug-info');
+        debugInfo.innerHTML = `
+            <p><strong>当前URL参数：</strong></p>
+            <p>file: ${fileParam || '无'}</p>
+            <p>show: ${showParam || '无'}</p>
+            <p><strong>文件路径测试：</strong></p>
+        `;
+        
+        // 测试路径清理功能
+        if (fileParam) {
+            const testPaths = [
+                fileParam,
+                '.\\article\\article\\测试文件.md',
+                'article/article/测试文件.md',
+                '测试文件'
+            ];
+            
+            testPaths.forEach(path => {
+                const cleaned = cleanFilePath(path);
+                debugInfo.innerHTML += `<p>原始: "${path}" → 清理后: "${cleaned}"</p>`;
+            });
+        }
+        
+        function cleanFilePath(filePath) {
+            // 解码URL编码
+            let cleanedPath = decodeURIComponent(filePath);
+            
+            // 替换Windows路径分隔符
+            cleanedPath = cleanedPath.replace(/\\/g, '/');
+            
+            // 移除开头的./或.\
+            cleanedPath = cleanedPath.replace(/^\.\//, '');
+            
+            // 如果路径包含article/article/，简化为article/
+            cleanedPath = cleanedPath.replace(/article\/article\//g, 'article/');
+            
+            // 确保以正确的路径开头
+            if (!cleanedPath.startsWith('article/')) {
+                cleanedPath = 'article/' + cleanedPath;
+            }
+            
+            // 确保以.md结尾
+            if (!cleanedPath.toLowerCase().endsWith('.md')) {
+                cleanedPath += '.md';
+            }
+            
+            return cleanedPath;
+        }
+    </script>
+</body>
+</html>
