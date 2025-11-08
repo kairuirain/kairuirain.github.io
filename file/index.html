@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的博客 - 资源列表</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="nav-container">
+                <h1 class="logo">我的博客</h1>
+                <ul class="nav-menu">
+                    <li><a href="../index.html" class="nav-link">首页</a></li>
+                    <li><a href="../article/index.html" class="nav-link">文章</a></li>
+                    <li><a href="index.html" class="nav-link active">资源</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container">
+        <section class="hero">
+            <h2>资源下载</h2>
+            <p>这里是我整理的学习资料和工具资源</p>
+        </section>
+        
+        <section class="file-list">
+            <div class="filter-controls">
+                <input type="text" id="search-input" placeholder="搜索资源..." class="search-input">
+                <select id="type-filter" class="type-filter">
+                    <option value="">所有类型</option>
+                    <option value="pdf">PDF文档</option>
+                    <option value="zip">压缩文件</option>
+                    <option value="rar">RAR文件</option>
+                </select>
+            </div>
+            
+            <div id="file-container">
+                <div class="loading">正在加载资源列表...</div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 我的博客. 保留所有权利.</p>
+    </footer>
+
+    <script src="../js/markdown-parser.js"></script>
+    <script>
+        // 文件资源管理
+        class FileResource {
+            constructor() {
+                this.files = [];
+                this.filteredFiles = [];
+                this.container = document.getElementById('file-container');
+                this.searchInput = document.getElementById('search-input');
+                this.typeFilter = document.getElementById('type-filter');
+                
+                this.init();
+            }
+            
+            async init() {
+                await this.loadFiles();
+                this.renderFiles();
+                this.setupEventListeners();
+            }
+            
+            async loadFiles() {
+                try {
+                    this.files = await fileManager.getFileList();
+                    this.filteredFiles = [...this.files];
+                } catch (error) {
+                    console.error('加载文件失败:', error);
+                    this.container.innerHTML = '<p class="error">加载资源列表失败，请刷新页面重试。</p>';
+                }
+            }
+            
+            renderFiles() {
+                if (this.filteredFiles.length === 0) {
+                    this.container.innerHTML = '<p class="no-files">暂无资源</p>';
+                    return;
+                }
+                
+                const filesHTML = this.filteredFiles.map(file => {
+                    const fileType = this.getFileType(file.filename);
+                    const typeClass = `file-type-${fileType}`;
+                    
+                    return `
+                        <div class="file-item" data-filename="${file.filename}">
+                            <div class="file-info">
+                                <div class="file-header">
+                                    <span class="file-name">${file.name}</span>
+                                    <span class="file-size">${file.size}</span>
+                                </div>
+                                <div class="file-description">${file.description}</div>
+                                <div class="file-meta">
+                                    <span class="file-date">${file.date}</span>
+                                    <span class="file-type ${typeClass}">${this.getFileTypeDisplay(fileType)}</span>
+                                </div>
+                            </div>
+                            <button class="download-btn" onclick="fileResource.downloadFile('${file.filename}')">下载</button>
+                        </div>
+                    `;
+                }).join('');
+                
+                this.container.innerHTML = filesHTML;
+            }
+            
+            getFileType(filename) {
+                const ext = filename.split('.').pop().toLowerCase();
+                if (['pdf'].includes(ext)) return 'pdf';
+                if (['zip'].includes(ext)) return 'zip';
+                if (['rar'].includes(ext)) return 'rar';
+                return 'other';
+            }
+            
+            getFileTypeDisplay(type) {
+                const types = {
+                    'pdf': 'PDF文档',
+                    'zip': '压缩文件',
+                    'rar': 'RAR文件',
+                    'other': '其他文件'
+                };
+                return types[type] || '未知类型';
+            }
+            
+            setupEventListeners() {
+                // 搜索功能
+                this.searchInput.addEventListener('input', () => {
+                    this.filterFiles();
+                });
+                
+                // 类型过滤
+                this.typeFilter.addEventListener('change', () => {
+                    this.filterFiles();
+                });
+            }
+            
+            filterFiles() {
+                const searchTerm = this.searchInput.value.toLowerCase();
+                const fileType = this.typeFilter.value;
+                
+                this.filteredFiles = this.files.filter(file => {
+                    const matchesSearch = file.name.toLowerCase().includes(searchTerm) ||
+                                        file.description.toLowerCase().includes(searchTerm);
+                    const matchesType = !fileType || this.getFileType(file.filename) === fileType;
+                    
+                    return matchesSearch && matchesType;
+                });
+                
+                this.renderFiles();
+            }
+            
+            downloadFile(filename) {
+                fileManager.downloadFile(filename);
+            }
+        }
+        
+        // 初始化文件资源管理
+        let fileResource;
+        document.addEventListener('DOMContentLoaded', () => {
+            fileResource = new FileResource();
+        });
+        
+        // 全局访问
+        window.fileResource = fileResource;
+    </script>
+</body>
+</html>

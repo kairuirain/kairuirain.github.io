@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的博客 - 文章列表</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="nav-container">
+                <h1 class="logo">我的博客</h1>
+                <ul class="nav-menu">
+                    <li><a href="../index.html" class="nav-link">首页</a></li>
+                    <li><a href="index.html" class="nav-link active">文章</a></li>
+                    <li><a href="../file/index.html" class="nav-link">资源</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container">
+        <section class="hero">
+            <h2>文章列表</h2>
+            <p>这里是我所有的技术文章和心得体会</p>
+        </section>
+        
+        <section class="article-list">
+            <div class="filter-controls">
+                <input type="text" id="search-input" placeholder="搜索文章..." class="search-input">
+                <select id="category-filter" class="category-filter">
+                    <option value="">所有分类</option>
+                    <option value="技术文章">技术文章</option>
+                    <option value="设计文章">设计文章</option>
+                    <option value="编程技术">编程技术</option>
+                </select>
+            </div>
+            
+            <div id="article-container">
+                <div class="loading">正在加载文章列表...</div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 文章详情模态框 -->
+    <div id="article-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div id="article-content" class="article-content"></div>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 我的博客. 保留所有权利.</p>
+    </footer>
+
+    <script src="../js/markdown-parser.js"></script>
+    <script>
+        // 文章列表管理
+        class ArticleList {
+            constructor() {
+                this.articles = [];
+                this.filteredArticles = [];
+                this.container = document.getElementById('article-container');
+                this.searchInput = document.getElementById('search-input');
+                this.categoryFilter = document.getElementById('category-filter');
+                this.modal = document.getElementById('article-modal');
+                this.articleContent = document.getElementById('article-content');
+                
+                this.init();
+            }
+            
+            async init() {
+                await this.loadArticles();
+                this.renderArticles();
+                this.setupEventListeners();
+            }
+            
+            async loadArticles() {
+                try {
+                    this.articles = await fileManager.getArticleList();
+                    this.filteredArticles = [...this.articles];
+                } catch (error) {
+                    console.error('加载文章失败:', error);
+                    this.container.innerHTML = '<p class="error">加载文章列表失败，请刷新页面重试。</p>';
+                }
+            }
+            
+            renderArticles() {
+                if (this.filteredArticles.length === 0) {
+                    this.container.innerHTML = '<p class="no-articles">暂无文章</p>';
+                    return;
+                }
+                
+                const articlesHTML = this.filteredArticles.map(article => `
+                    <div class="article-item" data-filename="${article.filename}">
+                        <div class="article-info">
+                            <h3 class="article-title">${article.title}</h3>
+                            <div class="article-meta">
+                                <span class="article-date">${article.date}</span>
+                                <span class="article-category">${article.category}</span>
+                            </div>
+                        </div>
+                        <button class="read-btn" onclick="articleList.readArticle('${article.filename}')">阅读</button>
+                    </div>
+                `).join('');
+                
+                this.container.innerHTML = articlesHTML;
+            }
+            
+            setupEventListeners() {
+                // 搜索功能
+                this.searchInput.addEventListener('input', () => {
+                    this.filterArticles();
+                });
+                
+                // 分类过滤
+                this.categoryFilter.addEventListener('change', () => {
+                    this.filterArticles();
+                });
+                
+                // 模态框关闭
+                document.querySelector('.close').addEventListener('click', () => {
+                    this.closeModal();
+                });
+                
+                // 点击模态框外部关闭
+                this.modal.addEventListener('click', (e) => {
+                    if (e.target === this.modal) {
+                        this.closeModal();
+                    }
+                });
+            }
+            
+            filterArticles() {
+                const searchTerm = this.searchInput.value.toLowerCase();
+                const category = this.categoryFilter.value;
+                
+                this.filteredArticles = this.articles.filter(article => {
+                    const matchesSearch = article.title.toLowerCase().includes(searchTerm) ||
+                                        article.category.toLowerCase().includes(searchTerm);
+                    const matchesCategory = !category || article.category === category;
+                    
+                    return matchesSearch && matchesCategory;
+                });
+                
+                this.renderArticles();
+            }
+            
+            async readArticle(filename) {
+                try {
+                    // 使用动态文件读取函数
+                    const result = await fileManager.readFileDynamically(`article/${filename}`);
+                    
+                    if (result.success) {
+                        if (result.content === '无文件') {
+                            // 文件不存在的情况
+                            this.articleContent.innerHTML = `
+                                <div class="no-file-message">
+                                    <h3>文章不存在</h3>
+                                    <p>抱歉，您要查看的文章文件不存在。</p>
+                                    <p><strong>文件名:</strong> ${filename}</p>
+                                    <p><strong>提示:</strong> ${result.message}</p>
+                                </div>
+                            `;
+                        } else {
+                            // 文件存在，解析并显示内容
+                            const htmlContent = markdownParser.parse(result.content);
+                            this.articleContent.innerHTML = htmlContent;
+                        }
+                    } else {
+                        // 读取失败的情况
+                        this.articleContent.innerHTML = `
+                            <div class="error-message">
+                                <h3>文章加载失败</h3>
+                                <p>加载文章内容时出现错误。</p>
+                                <p><strong>错误信息:</strong> ${result.message}</p>
+                            </div>
+                        `;
+                    }
+                    
+                    this.modal.style.display = 'block';
+                    document.body.style.overflow = 'hidden';
+                    
+                } catch (error) {
+                    console.error('读取文章失败:', error);
+                    this.articleContent.innerHTML = `
+                        <div class="error-message">
+                            <h3>系统错误</h3>
+                            <p>读取文章时发生未知错误。</p>
+                            <p><strong>错误信息:</strong> ${error.message}</p>
+                        </div>
+                    `;
+                    this.modal.style.display = 'block';
+                }
+            }
+            
+            closeModal() {
+                this.modal.style.display = 'none';
+                this.articleContent.innerHTML = '';
+                document.body.style.overflow = 'auto';
+            }
+        }
+        
+        // 初始化文章列表
+        let articleList;
+        document.addEventListener('DOMContentLoaded', () => {
+            articleList = new ArticleList();
+        });
+        
+        // 全局访问
+        window.articleList = articleList;
+    </script>
+</body>
+</html>
