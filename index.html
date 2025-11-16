@@ -45,5 +45,70 @@
     <footer>
         <p>&copy; 2025 我的博客. 保留所有权利.</p>
     </footer>
+
+    <!-- 作者信息蒙层 -->
+    <div id="author-overlay" class="author-overlay">
+        <div class="overlay-content">
+            <div class="overlay-header">
+                <h3>关于作者</h3>
+                <button id="close-overlay" class="close-btn">&times;</button>
+            </div>
+            <div class="overlay-body">
+                <div class="social-links">
+                    <a href="https://space.bilibili.com/3494363007027617" target="_blank" class="social-link bilibili">
+                        <span class="social-icon">📺</span>
+                        <span>哔哩哔哩主页</span>
+                    </a>
+                    <a href="https://www.douyin.com/user/MS4wLjABAAAA7tEtMiR9_Xa6DpE-gxEiDv7xVPuHqTQeB1uDdJkbKKszf_o5FLsVxqZCyr_v_DBA?from_tab_name=main&vid=7572938344947060002" target="_blank" class="social-link douyin">
+                        <span class="social-icon">🎵</span>
+                        <span>抖音主页</span>
+                    </a>
+                </div>
+                <div class="copyright-info">
+                    <p class="copyright">2025 SkyXing版权所有</p>
+                    <p class="update-time">最后更新时间: 2025年11月15日</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 作者信息蒙层控制
+        document.addEventListener('DOMContentLoaded', function() {
+            const overlay = document.getElementById('author-overlay');
+            const closeBtn = document.getElementById('close-overlay');
+            
+            // 页面加载后3秒显示蒙层
+            setTimeout(() => {
+                overlay.classList.add('show');
+            }, 3000);
+            
+            // 关闭按钮点击事件
+            closeBtn.addEventListener('click', function() {
+                overlay.classList.remove('show');
+                overlay.classList.add('hiding');
+                
+                // 动画结束后隐藏元素
+                setTimeout(() => {
+                    overlay.classList.remove('hiding');
+                    overlay.style.display = 'none';
+                }, 500);
+            });
+            
+            // 点击蒙层背景关闭
+            overlay.addEventListener('click', function(e) {
+                if (e.target === overlay) {
+                    closeBtn.click();
+                }
+            });
+            
+            // ESC键关闭蒙层
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && overlay.classList.contains('show')) {
+                    closeBtn.click();
+                }
+            });
+        });
+    </script>
 </body>
 </html>
